@@ -1,0 +1,11 @@
+{
+    global:
+        Java_com_xingyu_screencastclient_MainActivity_nativeInit;
+        Java_com_xingyu_screencastclient_VideoPlayActivity_nativeOpenRtsp;
+        Java_com_xingyu_screencastclient_VideoPlayActivity_nativeWaitRtspStart;
+        Java_com_xingyu_screencastclient_VideoPlayActivity_nativeGetMimeType;
+        Java_com_xingyu_screencastclient_VideoPlayActivity_nativeGetInputBuffer;
+        Java_com_xingyu_screencastclient_VideoPlayActivity_nativeStopGetInputBuffer;
+        Java_com_xingyu_screencastclient_VideoPlayActivity_nativeCloseRtsp;
+    local: *;
+};

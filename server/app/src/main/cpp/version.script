@@ -1,0 +1,8 @@
+{
+    global:
+        Java_com_xingyu_screencastserver_MainActivity_nativeInit;
+        Java_com_xingyu_screencastserver_RtspService_nativeStartServer;
+        Java_com_xingyu_screencastserver_RtspService_nativeStopServer;
+        Java_com_xingyu_screencastserver_RtspService_nativeQueueBuffer;
+    local: *;
+};
