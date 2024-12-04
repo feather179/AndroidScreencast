@@ -1,0 +1,215 @@
+diff --git a/liveMedia/GenericMediaServer.cpp b/liveMedia/GenericMediaServer.cpp
+index a7fa99e..7c19f7a 100644
+--- a/liveMedia/GenericMediaServer.cpp
++++ b/liveMedia/GenericMediaServer.cpp
+@@ -25,6 +25,10 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
+ #define snprintf _snprintf
+ #endif
+ 
++#include <android/log.h>
++#define LOG_TAG "GenericMediaServer"
++#define fprintf(out, ...)   __android_log_print(ANDROID_LOG_INFO, LOG_TAG, ##__VA_ARGS__)
++
+ ////////// GenericMediaServer implementation //////////
+ 
+ void GenericMediaServer::addServerMediaSession(ServerMediaSession* serverMediaSession) {
+diff --git a/liveMedia/H264or5VideoStreamFramer.cpp b/liveMedia/H264or5VideoStreamFramer.cpp
+index 02275c7..c60ddcd 100644
+--- a/liveMedia/H264or5VideoStreamFramer.cpp
++++ b/liveMedia/H264or5VideoStreamFramer.cpp
+@@ -23,6 +23,10 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
+ #include "BitVector.hh"
+ #include <GroupsockHelper.hh> // for "gettimeofday()"
+ 
++#include <android/log.h>
++#define LOG_TAG "H264or5VideoStreamFramer"
++#define fprintf(out, ...)   __android_log_print(ANDROID_LOG_INFO, LOG_TAG, ##__VA_ARGS__)
++
+ ////////// H264or5VideoStreamParser definition //////////
+ 
+ class H264or5VideoStreamParser: public MPEGVideoStreamParser {
+@@ -86,7 +90,8 @@ H264or5VideoStreamFramer
+   fParser = createParser
+     ? new H264or5VideoStreamParser(hNumber, this, inputSource, includeStartCodeInOutput)
+     : NULL;
+-  fFrameRate = 30.0; // We assume a frame rate of 30 fps, unless we learn otherwise (from parsing a VPS or SPS NAL unit)
++//  fFrameRate = 30.0; // We assume a frame rate of 30 fps, unless we learn otherwise (from parsing a VPS or SPS NAL unit)
++    fFrameRate = 60.0;
+ }
+ 
+ H264or5VideoStreamFramer::~H264or5VideoStreamFramer() {
+diff --git a/liveMedia/MPEGVideoStreamFramer.cpp b/liveMedia/MPEGVideoStreamFramer.cpp
+index 3afa594..68c3c4a 100644
+--- a/liveMedia/MPEGVideoStreamFramer.cpp
++++ b/liveMedia/MPEGVideoStreamFramer.cpp
+@@ -22,6 +22,10 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
+ #include "MPEGVideoStreamParser.hh"
+ #include <GroupsockHelper.hh>
+ 
++#include <android/log.h>
++#define LOG_TAG "MPEGVideoStreamFramer"
++#define fprintf(out, ...)   __android_log_print(ANDROID_LOG_INFO, LOG_TAG, ##__VA_ARGS__)
++
+ ////////// TimeCode implementation //////////
+ 
+ TimeCode::TimeCode()
+diff --git a/liveMedia/MultiFramedRTPSink.cpp b/liveMedia/MultiFramedRTPSink.cpp
+index 4f9ece7..af6f4b8 100644
+--- a/liveMedia/MultiFramedRTPSink.cpp
++++ b/liveMedia/MultiFramedRTPSink.cpp
+@@ -22,6 +22,10 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
+ #include "MultiFramedRTPSink.hh"
+ #include "GroupsockHelper.hh"
+ 
++#include <android/log.h>
++#define LOG_TAG "MultiFramedRTPSink"
++#define fprintf(out, ...)   __android_log_print(ANDROID_LOG_INFO, LOG_TAG, ##__VA_ARGS__)
++
+ ////////// MultiFramedRTPSink //////////
+ 
+ void MultiFramedRTPSink::setPacketSizes(unsigned preferredPacketSize,
+diff --git a/liveMedia/RTCP.cpp b/liveMedia/RTCP.cpp
+index 30c5999..17bbee5 100644
+--- a/liveMedia/RTCP.cpp
++++ b/liveMedia/RTCP.cpp
+@@ -25,6 +25,14 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
+ #define snprintf _snprintf
+ #endif
+ 
++#include <sstream>
++#include <iomanip>
++
++#include <android/log.h>
++
++#define LOG_TAG "RTCP"
++#define fprintf(out, ...)   __android_log_print(ANDROID_LOG_INFO, LOG_TAG, ##__VA_ARGS__)
++
+ ////////// RTCPMemberDatabase //////////
+ 
+ class RTCPMemberDatabase {
+@@ -522,19 +530,38 @@ void RTCPInstance
+     unsigned char* pkt = fInBuf;
+ 
+ #ifdef DEBUG
+-    fprintf(stderr, "[%p]saw incoming RTCP packet (from ", this);
+-    if (tcpSocketNum < 0) {
+-      // Note that "fromAddressAndPort" is valid only if we're receiving over UDP (not over TCP):
+-      fprintf(stderr, "address %s, port %d", AddressString(fromAddressAndPort).val(), ntohs(portNum(fromAddressAndPort)));
+-    } else {
+-      fprintf(stderr, "TCP socket #%d, stream channel id %d", tcpSocketNum, tcpStreamChannelId);
+-    }
+-    fprintf(stderr, ")\n");
+-    for (unsigned i = 0; i < packetSize; ++i) {
+-      if (i%4 == 0) fprintf(stderr, " ");
+-      fprintf(stderr, "%02x", pkt[i]);
+-    }
+-    fprintf(stderr, "\n");
++        std::stringstream ss;
++//        fprintf(stderr, "[%p]saw incoming RTCP packet (from ", this);
++        ss << "[";
++        ss << std::hex << std::showbase << reinterpret_cast<uintptr_t>(this) << std::dec << std::noshowbase;
++        ss << "]saw incoming RTCP packet (from ";
++        if (tcpSocketNum < 0) {
++            // Note that "fromAddressAndPort" is valid only if we're receiving over UDP (not over TCP):
++//            fprintf(stderr, "address %s, port %d", AddressString(fromAddressAndPort).val(),
++//                    ntohs(portNum(fromAddressAndPort)));
++            ss << "address " <<AddressString(fromAddressAndPort).val() << ", port "
++                << ntohs(portNum(fromAddressAndPort)) << ")";
++        } else {
++//            fprintf(stderr, "TCP socket #%d, stream channel id %d", tcpSocketNum,
++//                    tcpStreamChannelId);
++            ss << "TCP socket #" << tcpSocketNum << ", stream channel id " << tcpStreamChannelId << ")";
++        }
++//        fprintf(stderr, ")\n");
++        fprintf(stderr, "%s", ss.str().c_str());
++
++        ss.str("");
++        ss << std::hex << std::setw(2) << std::setfill('0');
++        for (unsigned i = 0; i < packetSize; ++i) {
++            if (i > 0 && i % 16 == 0) {
++                ss << "\n";
++            }
++            ss << (int)pkt[i] << " ";
++//            if (i % 4 == 0) fprintf(stderr, " ");
++//            fprintf(stderr, "%02x", pkt[i]);
++        }
++//        fprintf(stderr, "\n");
++        fprintf(stderr, "%s", ss.str().c_str());
++
+ #endif
+     int totPacketSize = IP_UDP_HDR_SIZE + packetSize;
+ 
+@@ -955,10 +982,14 @@ void RTCPInstance::sendBuiltPacket() {
+   fprintf(stderr, "sending RTCP packet\n");
+   unsigned char* p = fOutBuf->packet();
+   for (unsigned i = 0; i < fOutBuf->curPacketSize(); ++i) {
+-    if (i%4 == 0) fprintf(stderr," ");
+-    fprintf(stderr, "%02x", p[i]);
+-  }
+-  fprintf(stderr, "\n");
++//        if (i % 4 == 0) fprintf(stderr, " ");
++//        fprintf(stderr, "%02x", p[i]);
++        if (i > 0 && i % 16 == 0)
++            ss << "\n";
++        ss << (int) p[i] << " ";
++    }
++//    fprintf(stderr, "\n");
++    fprintf(stderr, "%s", ss.str().c_str());
+ #endif
+   unsigned reportSize = fOutBuf->curPacketSize();
+   if (fCrypto != NULL) { // Encrypt/tag the data before sending it:
+diff --git a/liveMedia/RTPInterface.cpp b/liveMedia/RTPInterface.cpp
+index d68a18c..7e6075a 100644
+--- a/liveMedia/RTPInterface.cpp
++++ b/liveMedia/RTPInterface.cpp
+@@ -24,6 +24,11 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
+ #include <GroupsockHelper.hh>
+ #include <stdio.h>
+ 
++#include <android/log.h>
++
++#define LOG_TAG "RTPInterface"
++#define fprintf(out, ...)   __android_log_print(ANDROID_LOG_INFO, LOG_TAG, ##__VA_ARGS__)
++
+ ////////// Helper Functions - Definition //////////
+ 
+ // Helper routines and data structures, used to implement
+@@ -142,7 +147,8 @@ RTPInterface::RTPInterface(Medium* owner, Groupsock* gs)
+   // even if the socket was previously reported (e.g., by "select()") as having data available.
+   // (This can supposedly happen if the UDP checksum fails, for example.)
+   makeSocketNonBlocking(fGS->socketNum());
+-  increaseSendBufferTo(envir(), fGS->socketNum(), 50*1024);
++//  increaseSendBufferTo(envir(), fGS->socketNum(), 50*1024);
++  increaseSendBufferTo(envir(), fGS->socketNum(), 1000*1024);
+ }
+ 
+ RTPInterface::~RTPInterface() {
+diff --git a/liveMedia/RTSPServer.cpp b/liveMedia/RTSPServer.cpp
+index f494903..477b9d6 100644
+--- a/liveMedia/RTSPServer.cpp
++++ b/liveMedia/RTSPServer.cpp
+@@ -24,6 +24,10 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
+ #include "Base64.hh"
+ #include <GroupsockHelper.hh>
+ 
++#include <android/log.h>
++#define LOG_TAG "RTSPServer"
++#define fprintf(out, ...)   __android_log_print(ANDROID_LOG_INFO, LOG_TAG, ##__VA_ARGS__)
++
+ ////////// RTSPServer implementation //////////
+ 
+ RTSPServer*
+diff --git a/liveMedia/StreamParser.cpp b/liveMedia/StreamParser.cpp
+index 433f0ff..2a847b1 100644
+--- a/liveMedia/StreamParser.cpp
++++ b/liveMedia/StreamParser.cpp
+@@ -23,7 +23,8 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
+ #include <string.h>
+ #include <stdlib.h>
+ 
+-#define BANK_SIZE 150000
++//#define BANK_SIZE 150000
++#define BANK_SIZE 2000000
+ 
+ void StreamParser::flushInput() {
+   fCurParserIndex = fSavedParserIndex = 0;
